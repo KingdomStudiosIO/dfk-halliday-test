@@ -1,17 +1,18 @@
 import { ChangeEvent, KeyboardEvent, useState } from 'react'
 import { Dialog } from '@base-ui-components/react/dialog'
-import { ChainId, LoginOptions } from 'features/halliday/types'
+import { LoginOptions } from 'features/halliday/types'
 import { loginWithHalliday } from 'features/halliday/utils'
+import type { Halliday } from 'halliday-sdk/dist/types/wallet'
 import styles from './index.module.css'
 
 type HallidayLoginProps = {
-  chainId: ChainId
+  client: Halliday | null
   open: boolean
   setOpen: (open: boolean) => void
   account: string | null
 }
 
-export default function HallidayLogin({ chainId, open, setOpen, account }: HallidayLoginProps) {
+export default function HallidayLogin({ client, open, setOpen, account }: HallidayLoginProps) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
@@ -39,7 +40,7 @@ export default function HallidayLogin({ chainId, open, setOpen, account }: Halli
       if (option === LoginOptions.Email && !isValidEmail(email)) {
         setError('Please enter a valid email address.')
       } else {
-        loginWithHalliday(chainId, option, email)
+        loginWithHalliday(client, option, email)
       }
     }
   }
