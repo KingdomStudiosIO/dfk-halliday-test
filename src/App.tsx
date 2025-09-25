@@ -1,34 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css';
+import { lazy, Suspense, useState } from 'react'
+import { Dialog } from '@base-ui-components/react/dialog'
+import { useHallidaySignOut, useInitHallidayWallet } from 'features/halliday/hooks'
+import './App.css'
+
+const HallidayLogin = lazy(() => import('features/halliday/components/login'))
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [account, setAccount] = useState<string | null>(null)
+  const [_, setSigner] = useState<any | null>(null)
+  const [wallet, setWallet] = useState<any | null>(null)
+  const [open, setOpen] = useState(false)
+
+  useInitHallidayWallet(setAccount, setSigner, setWallet)
+  const logOutWithHalliday = useHallidaySignOut(setAccount, setSigner, setWallet)
 
   return (
-    <>
+    <div className="root">
+      <h1>DFK Halliday Test</h1>
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <h2>Account:</h2>
+        <p>{account ? account : 'Not logged in'}</p>
+        <h2>Wallet:</h2>
+        <p>{wallet ? JSON.stringify(wallet) : 'Not connected'}</p>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Trigger disabled={!!account}>Login Modal</Dialog.Trigger>
+        {/* Modals have a separate context provider & global state and are lazy loaded, so no code within them triggers until they are opened */}
+        <Suspense fallback={<div>Loading...</div>}>
+          {open && (
+            <HallidayLogin setOpen={setOpen} setAccount={setAccount} setSigner={setSigner} setWallet={setWallet} />
+          )}
+        </Suspense>
+      </Dialog.Root>
+
+      <button onClick={() => logOutWithHalliday()} disabled={!account}>
+        Log Out
+      </button>
+    </div>
   )
 }
 
