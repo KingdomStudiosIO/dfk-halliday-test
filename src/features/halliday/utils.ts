@@ -1,8 +1,8 @@
-import { ChainId } from 'constants/sdk-extra'
 import { hallidayClientByChain } from './constants'
-import { LoginOptions, SupportedHallidayChains } from './types'
+import { ChainId, LoginOptions, type Wallet } from './types'
 
-export async function loginWithHalliday(chainId: SupportedHallidayChains, option: LoginOptions, email?: string) {
+export async function loginWithHalliday(chainId: ChainId, option: LoginOptions, email?: string) {
+  console.log('Attempting login...')
   try {
     switch (option) {
       case LoginOptions.Google:
@@ -27,33 +27,40 @@ export async function loginWithHalliday(chainId: SupportedHallidayChains, option
   }
 }
 
-export async function logOutWithHalliday() {
+export async function logOutWithHalliday(chainId: ChainId) {
+  console.log('Logging out user...')
   try {
-    // const { hallidayChainId } = getState().halliday
-    const hallidayChainId = ChainId.DFK_MAINNET
-    await hallidayClientByChain[hallidayChainId].logOut()
+    await hallidayClientByChain[chainId].logOut()
   } catch (error) {
     console.log(error)
   }
 }
 
-export async function getHallidayUserInfo(chainId: SupportedHallidayChains) {
+export async function getHallidayConnection(
+  chainId: ChainId,
+  setAccount: (account: string | null) => void,
+  setWallet: (wallet: Wallet | null) => void
+) {
   try {
-    return await hallidayClientByChain[chainId].getUserInfo()
-  } catch (error) {
-    console.log(error)
-    return
-  }
-}
+    console.log('Initializing Web3Auth client...')
+    const client = hallidayClientByChain[chainId]
+    console.log('✅ SUCCESS: Client created and initialized!')
 
-export async function getHallidayWallet(id: string, chainId: SupportedHallidayChains) {
-  try {
-    return await hallidayClientByChain[chainId].getOrCreateHallidayAAWallet(id)
+    const userInfo = await client.getUserInfo()
+    console.log({ userInfo })
+
+    if (userInfo) {
+      console.log('🔐 User logged in')
+      const wallet = await client.getOrCreateHallidayAAWallet(userInfo.signer.address)
+      if (wallet) {
+        setWallet(wallet)
+        console.log({ wallet })
+      }
+      setAccount(userInfo.signer.address)
+    } else {
+      console.log('No user info found')
+    }
   } catch (error) {
-    console.log(error)
-    // if (store && (error as any).response.data.code === HallidayErrorCodes.USER_ALREADY_EXISTS) {
-    //   store.dispatch(setModal({ type: ModalTypes.HallidayUserExists, show: true }))
-    // }
-    return
+    console.log('Error fetching user info:', error)
   }
 }

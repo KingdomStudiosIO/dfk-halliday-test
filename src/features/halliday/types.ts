@@ -1,13 +1,13 @@
-import { ChainId } from 'constants/sdk-extra'
 import { GetUserInfoResponse, GetWalletResponse } from 'halliday-sdk'
 
-export type SupportedHallidayChains =
-  | ChainId.DFK_MAINNET
-  | ChainId.DFK_TESTNET
-  | ChainId.KAIA_MAINNET
-  | ChainId.KAIA_TESTNET
-  | ChainId.METIS_MAINNET
-  | ChainId.METIS_TESTNET
+export enum ChainId {
+  DFK_MAINNET = 53935,
+  DFK_TESTNET = 335,
+  KAIA_MAINNET = 8217,
+  KAIA_TESTNET = 1001,
+  METIS_MAINNET = 1088,
+  METIS_TESTNET = 59902,
+}
 
 export type Signer = GetUserInfoResponse['signer']
 export type Wallet = GetWalletResponse
@@ -17,9 +17,4 @@ export enum LoginOptions {
   Facebook,
   Twitter,
   Email,
-}
-
-export enum HallidayErrorCodes {
-  USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
-  INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
 }

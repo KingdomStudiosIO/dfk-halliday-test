@@ -1,18 +1,26 @@
-import { lazy, Suspense, useState } from 'react'
-import { Dialog } from '@base-ui-components/react/dialog'
-import { useHallidaySignOut, useInitHallidayWallet } from 'features/halliday/hooks'
+import { Fragment, useEffect, useState } from 'react'
+import HallidayLogin from 'features/halliday/components/login'
+import { ChainId, type Wallet } from 'features/halliday/types'
+import { getHallidayConnection, logOutWithHalliday } from 'features/halliday/utils'
 import './App.css'
 
-const HallidayLogin = lazy(() => import('features/halliday/components/login'))
+const HALLIDAY_CHAIN_ID = ChainId.DFK_MAINNET
 
 function App() {
   const [account, setAccount] = useState<string | null>(null)
-  const [_, setSigner] = useState<any | null>(null)
-  const [wallet, setWallet] = useState<any | null>(null)
+  const [wallet, setWallet] = useState<Wallet | null>(null)
   const [open, setOpen] = useState(false)
 
-  useInitHallidayWallet(setAccount, setSigner, setWallet)
-  const logOutWithHalliday = useHallidaySignOut(setAccount, setSigner, setWallet)
+  async function handleLogout() {
+    await logOutWithHalliday(HALLIDAY_CHAIN_ID)
+    setWallet(null)
+    setAccount(null)
+  }
+
+  useEffect(() => {
+    console.log('Initializing Halliday connection via main page...')
+    getHallidayConnection(HALLIDAY_CHAIN_ID, setAccount, setWallet)
+  }, [])
 
   return (
     <div className="root">
@@ -21,22 +29,25 @@ function App() {
         <h2>Account:</h2>
         <p>{account ? account : 'Not logged in'}</p>
         <h2>Wallet:</h2>
-        <p>{wallet ? JSON.stringify(wallet) : 'Not connected'}</p>
+        <p>
+          {wallet
+            ? Object.entries(wallet).map(([key, value]) => (
+                <Fragment key={key}>
+                  <span>
+                    {key}: {value as string}
+                  </span>
+                  <br />
+                </Fragment>
+              ))
+            : 'Not connected'}
+        </p>
       </div>
-
-      <Dialog.Root open={open} onOpenChange={setOpen}>
-        <Dialog.Trigger disabled={!!account}>Login Modal</Dialog.Trigger>
-        {/* Modals have a separate context provider & global state and are lazy loaded, so no code within them triggers until they are opened */}
-        <Suspense fallback={<div>Loading...</div>}>
-          {open && (
-            <HallidayLogin setOpen={setOpen} setAccount={setAccount} setSigner={setSigner} setWallet={setWallet} />
-          )}
-        </Suspense>
-      </Dialog.Root>
-
-      <button onClick={() => logOutWithHalliday()} disabled={!account}>
-        Log Out
-      </button>
+      <div style={{ marginTop: '20px', display: 'flex', gap: '16px', justifyContent: 'center' }}>
+        <HallidayLogin chainId={HALLIDAY_CHAIN_ID} open={open} setOpen={setOpen} account={account} />
+        <button onClick={handleLogout} disabled={!account}>
+          Log Out
+        </button>
+      </div>
     </div>
   )
 }

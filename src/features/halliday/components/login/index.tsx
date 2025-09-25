@@ -1,22 +1,19 @@
-import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react'
+import { ChangeEvent, KeyboardEvent, useState } from 'react'
 import { Dialog } from '@base-ui-components/react/dialog'
-import { ChainId } from 'constants/sdk-extra'
-import { LoginOptions } from 'features/halliday/types'
-import { getHallidayUserInfo, getHallidayWallet, loginWithHalliday } from 'features/halliday/utils'
+import { ChainId, LoginOptions } from 'features/halliday/types'
+import { loginWithHalliday } from 'features/halliday/utils'
 import styles from './index.module.css'
 
 type HallidayLoginProps = {
+  chainId: ChainId
+  open: boolean
   setOpen: (open: boolean) => void
-  setAccount: (account: string | null) => void
-  setSigner: (signer: any) => void
-  setWallet: (wallet: any) => void
+  account: string | null
 }
 
-export default function HallidayLogin({ setOpen, setAccount, setSigner, setWallet }: HallidayLoginProps) {
+export default function HallidayLogin({ chainId, open, setOpen, account }: HallidayLoginProps) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
-  // const { hallidayChainId } = useSelector(s => s.halliday)
-  const hallidayChainId = ChainId.DFK_MAINNET
 
   function isValidEmail(email: string) {
     return email
@@ -42,67 +39,44 @@ export default function HallidayLogin({ setOpen, setAccount, setSigner, setWalle
       if (option === LoginOptions.Email && !isValidEmail(email)) {
         setError('Please enter a valid email address.')
       } else {
-        loginWithHalliday(hallidayChainId, option, email)
+        loginWithHalliday(chainId, option, email)
       }
     }
   }
 
-  useEffect(() => {
-    async function getUserInfo() {
-      const userInfo = await getHallidayUserInfo(hallidayChainId)
-      if (userInfo) {
-        console.log('got user info', { userInfo })
-        if (userInfo) {
-          const wallet = await getHallidayWallet(userInfo.signer.address, hallidayChainId)
-          if (wallet) {
-            setWallet(wallet)
-            // changeAccount(wallet.account_address)
-            console.log({ wallet })
-          }
-          setSigner(userInfo.signer)
-          setAccount(userInfo.signer.address)
-          setOpen(false)
-        } else {
-          setSigner(undefined)
-        }
-      } else {
-        console.log('No user info found', { userInfo })
-      }
-    }
-
-    getUserInfo()
-  }, [])
-
   return (
-    <Dialog.Portal>
-      <Dialog.Backdrop className={styles.Backdrop} />
-      <Dialog.Popup className={styles.Popup}>
-        <Dialog.Title className={styles.Title}>DFK Smart Account</Dialog.Title>
-        <p className={styles.description}>Create or log in to your smart account with just your email.</p>
-        <div className={styles.email}>
-          <input
-            type="text"
-            value={email}
-            onChange={handleEmailChange}
-            onKeyDown={handleKeyDown}
-            placeholder="user@email.com"
-          />
-          <button className={styles.loginButton} onClick={login(LoginOptions.Email)} disabled={email.trim() === ''}>
-            Log in
-          </button>
-        </div>
-        {error && <p className={styles.error}>{error}</p>}
-        <div className={styles.divider}>
-          <hr />
-          <span>or</span>
-          <hr />
-        </div>
-        <p className={styles.socialDescription}>Create or log in to your smart account via social login.</p>
-        <div className={styles.socials}>
-          <button onClick={login(LoginOptions.Google)}>Google</button>
-          <button onClick={login(LoginOptions.Twitter)}>Twitter</button>
-        </div>
-      </Dialog.Popup>
-    </Dialog.Portal>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger disabled={!!account}>Login Modal</Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.Backdrop} />
+        <Dialog.Popup className={styles.Popup}>
+          <Dialog.Title className={styles.Title}>DFK Smart Account</Dialog.Title>
+          <p className={styles.description}>Create or log in to your smart account with just your email.</p>
+          <div className={styles.email}>
+            <input
+              type="text"
+              value={email}
+              onChange={handleEmailChange}
+              onKeyDown={handleKeyDown}
+              placeholder="user@email.com"
+            />
+            <button className={styles.loginButton} onClick={login(LoginOptions.Email)} disabled={email.trim() === ''}>
+              Log in
+            </button>
+          </div>
+          {error && <p className={styles.error}>{error}</p>}
+          <div className={styles.divider}>
+            <hr />
+            <span>or</span>
+            <hr />
+          </div>
+          <p className={styles.socialDescription}>Create or log in to your smart account via social login.</p>
+          <div className={styles.socials}>
+            <button onClick={login(LoginOptions.Google)}>Google</button>
+            <button onClick={login(LoginOptions.Twitter)}>Twitter</button>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }
