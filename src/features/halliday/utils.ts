@@ -38,16 +38,25 @@ export async function logOutWithHalliday(client: Halliday | null) {
   }
 }
 
-export async function getHallidayConnection(
-  chainId: ChainId,
-  setAccount: (account: string | null) => void,
-  setWallet: (wallet: Wallet | null) => void
-): Promise<Halliday | null> {
+export function getHallidayClient(chainId: ChainId): Halliday | null {
   try {
     console.log('Initializing Web3Auth client...')
     const client = hallidayClientByChain[chainId]
     console.log('✅ SUCCESS: Client created and initialized!')
+    return client
+  } catch (error) {
+    console.log('Error initializing client:', error)
+    return null
+  }
+}
 
+export async function getHallidayConnection(
+  client: Halliday | null,
+  setAccount: (account: string | null) => void,
+  setWallet: (wallet: Wallet | null) => void
+) {
+  if (!client) return null
+  try {
     const userInfo = await client.getUserInfo()
     console.log({ userInfo })
 
@@ -62,7 +71,7 @@ export async function getHallidayConnection(
     } else {
       console.log('No user info found')
     }
-    return client
+    return userInfo
   } catch (error) {
     console.log('Error fetching user info:', error)
     return null

@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import HallidayLogin from 'features/halliday/components/login'
 import { ChainId, type Wallet } from 'features/halliday/types'
-import { getHallidayConnection, logOutWithHalliday } from 'features/halliday/utils'
+import { getHallidayClient, getHallidayConnection, logOutWithHalliday } from 'features/halliday/utils'
 import type { Halliday } from 'halliday-sdk'
 import './App.css'
 
@@ -20,18 +20,44 @@ function App() {
   }
 
   useEffect(() => {
-    async function getHalliday() {
-      console.log('Initializing Halliday connection via main page...')
-      const client = await getHallidayConnection(HALLIDAY_CHAIN_ID, setAccount, setWallet)
-      if (client) {
-        setClient(client)
-        console.log('✅ SUCCESS: Halliday connection initialized!')
-      } else {
-        console.log('❌ ERROR: Failed to initialize Halliday connection.')
+    console.log('Initializing Halliday connection via main page...')
+    const client = getHallidayClient(HALLIDAY_CHAIN_ID)
+    if (client) {
+      console.log({client})
+      setClient(client)
+      console.log('✅ SUCCESS: Halliday connection initialized!')
+    } else {
+      console.log('❌ ERROR: Failed to initialize Halliday connection.')
+    }
+  }, [])
+
+  useEffect(() => {
+    async function getConnection() {
+      if (!client) return
+
+      const maxAttempts = 3
+      const delay = 500
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`Fetching userInfo... (attempt ${attempt})`)
+        const userInfo = await getHallidayConnection(client, setAccount, setWallet)
+
+        if (userInfo) {
+          console.log('✅ Successfully retrieved user info')
+          return // Success - exit early
+        }
+
+        if (attempt < maxAttempts) {
+          console.log(`No user info found, retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        } else {
+          console.log('❌ Failed to get user info after all attempts')
+        }
       }
     }
-    getHalliday()
-  }, [])
+
+    getConnection()
+  }, [client])
 
   return (
     <div className="root">
